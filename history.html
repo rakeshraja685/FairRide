@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FairRide | Trip History</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-container": "#edeeef",
+                "on-primary-fixed-variant": "#005228",
+                "background": "#f8f9fa",
+                "on-primary-container": "#005027",
+                "on-secondary-fixed": "#001d31",
+                "surface-variant": "#e1e3e4",
+                "surface-container-low": "#f3f4f5",
+                "error": "#ba1a1a",
+                "on-background": "#191c1d",
+                "surface-container-high": "#e7e8e9",
+                "on-surface": "#191c1d",
+                "tertiary-container": "#ff9875",
+                "surface-tint": "#006d37",
+                "primary-container": "#2ecc71",
+                "surface-container-lowest": "#ffffff",
+                "tertiary": "#98472a",
+                "on-tertiary-container": "#772e14",
+                "tertiary-fixed": "#ffdbd0",
+                "surface-container-highest": "#e1e3e4",
+                "inverse-surface": "#2e3132",
+                "primary-fixed-dim": "#4ae183",
+                "surface-dim": "#d9dadb",
+                "on-secondary-fixed-variant": "#004b73",
+                "outline-variant": "#bbcbbb",
+                "secondary-fixed": "#cce5ff",
+                "on-secondary": "#ffffff",
+                "on-tertiary-fixed-variant": "#793015",
+                "outline": "#6c7b6d",
+                "on-tertiary-fixed": "#390c00",
+                "on-secondary-container": "#00476e",
+                "secondary-container": "#5cb8fd",
+                "tertiary-fixed-dim": "#ffb59d",
+                "on-tertiary": "#ffffff",
+                "on-primary-fixed": "#00210c",
+                "on-error-container": "#93000a",
+                "inverse-primary": "#4ae183",
+                "error-container": "#ffdad6",
+                "secondary": "#006397",
+                "primary": "#006d37",
+                "surface-bright": "#f8f9fa",
+                "surface": "#f8f9fa",
+                "on-surface-variant": "#3d4a3e",
+                "primary-fixed": "#6bfe9c",
+                "on-primary": "#ffffff",
+                "secondary-fixed-dim": "#92ccff",
+                "on-error": "#ffffff",
+                "inverse-on-surface": "#f0f1f2"
+            },
+            "borderRadius": {
+                "DEFAULT": "1rem",
+                "lg": "2rem",
+                "xl": "3rem",
+                "full": "9999px"
+            },
+            "fontFamily": {
+                "headline": ["Manrope"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-effect {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1, h2, h3 {
+        font-family: 'Manrope', sans-serif;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#f8f9fa] dark:bg-slate-950 flex items-center justify-between px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="hover:opacity-80 transition-opacity active:scale-95 duration-100 text-[#191c1d] dark:text-slate-400">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="text-xl font-extrabold text-[#006d37] dark:text-[#2ecc71] tracking-tighter font-['Manrope']">FairRide</h1>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="professional portrait of a young man with a friendly expression in soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDe-T_nnYevdzwx_wkHwiUraGKbjCp9lp7_GKuCP-4D2wOE95wTdC1zkfHPisctPstA_ki2AqzmpVDZOiHjPnPpZ14rmW_dA7pIvS97M7YBIvTPWgoCewPMqzRqb43_auP1HqlCFUduxjOveOPxHYMmOv4-83LsKVaWW5LXzn15Zsw5moKNuRwMVO6rHvnxdrD9g9MQ8KdDc8NsrUIZi1abXwLDohzslcBen9Wm0sMyEDC-i0UfUfDwj9fBcxliuvm4cw6xjnCBJY"/>
+</div>
+</div>
+</header>
+<main class="pt-20 px-6 max-w-2xl mx-auto">
+<!-- Editorial Header Section -->
+<section class="mt-8 mb-10">
+<p class="text-[10px] uppercase tracking-[0.15em] font-bold text-primary mb-2">Activity Journal</p>
+<h2 class="text-4xl font-extrabold tracking-tight text-on-surface leading-tight">Trip <br/>History</h2>
+</section>
+<!-- Thumb-Friendly Filters -->
+<section class="flex gap-3 mb-10 overflow-x-auto pb-2 scrollbar-hide">
+<button class="flex items-center gap-2 bg-surface-container-lowest shadow-[0px_4px_12px_rgba(25,28,29,0.04)] px-5 py-3 rounded-full hover:opacity-80 transition-all active:scale-95">
+<span class="material-symbols-outlined text-sm">calendar_month</span>
+<span class="text-sm font-semibold">Date</span>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+<button class="flex items-center gap-2 bg-surface-container-lowest shadow-[0px_4px_12px_rgba(25,28,29,0.04)] px-5 py-3 rounded-full hover:opacity-80 transition-all active:scale-95">
+<span class="material-symbols-outlined text-sm">directions_car</span>
+<span class="text-sm font-semibold">Vehicle Type</span>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+<button class="flex items-center justify-center w-12 h-12 bg-primary text-on-primary rounded-full shadow-lg shadow-primary/20 active:scale-95 transition-all">
+<span class="material-symbols-outlined">tune</span>
+</button>
+</section>
+<!-- History List (Bento-inspired asymmetric layout) -->
+<div class="space-y-6">
+<!-- Entry 1 (Hero Entry) -->
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0px_12px_32px_rgba(25,28,29,0.04)] group relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+<span class="material-symbols-outlined text-8xl" style="font-variation-settings: 'FILL' 1;">directions_car</span>
+</div>
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">directions_car</span>
+</div>
+<div>
+<p class="text-xs uppercase tracking-widest font-bold text-on-surface-variant opacity-60 mb-1">Today, 2:30 PM</p>
+<h3 class="text-lg font-bold text-on-surface">Luxury Sedan</h3>
+</div>
+</div>
+<div class="text-right">
+<p class="text-[10px] uppercase font-bold text-primary tracking-tighter mb-1">Total Fare</p>
+<p class="text-2xl font-extrabold text-on-surface tracking-tight">₹148.50</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-outline-variant/15">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-lg">route</span>
+<span class="text-sm font-medium text-on-surface-variant">12.5 km</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-lg">schedule</span>
+<span class="text-sm font-medium text-on-surface-variant">24 mins</span>
+</div>
+<span class="text-[10px] font-bold py-1 px-3 bg-primary/10 text-primary rounded-full uppercase">Completed</span>
+</div>
+</div>
+<!-- Entry 2 -->
+<div class="bg-surface-container-low p-5 rounded-lg flex items-center justify-between hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">two_wheeler</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant opacity-50">Yesterday, 10:15 AM</p>
+<p class="font-bold text-on-surface">Bike Trip</p>
+<p class="text-xs text-on-surface-variant">4.2 km • 12 mins</p>
+</div>
+</div>
+<p class="text-xl font-extrabold text-on-surface tracking-tight">₹42.00</p>
+</div>
+<!-- Entry 3 -->
+<div class="bg-surface-container-low p-5 rounded-lg flex items-center justify-between hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">electric_rickshaw</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant opacity-50">24 Oct, 6:45 PM</p>
+<p class="font-bold text-on-surface">Auto Rickshaw</p>
+<p class="text-xs text-on-surface-variant">8.9 km • 31 mins</p>
+</div>
+</div>
+<p class="text-xl font-extrabold text-on-surface tracking-tight">₹112.50</p>
+</div>
+<!-- Entry 4 -->
+<div class="bg-surface-container-low p-5 rounded-lg flex items-center justify-between hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">directions_car</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant opacity-50">22 Oct, 11:20 AM</p>
+<p class="font-bold text-on-surface">Standard Car</p>
+<p class="text-xs text-on-surface-variant">15.1 km • 42 mins</p>
+</div>
+</div>
+<p class="text-xl font-extrabold text-on-surface tracking-tight">₹256.00</p>
+</div>
+<!-- Entry 5 (Asymmetric Visual Break) -->
+<div class="relative bg-secondary text-on-secondary p-6 rounded-xl overflow-hidden shadow-xl shadow-secondary/10">
+<div class="relative z-10">
+<p class="text-[10px] uppercase font-bold tracking-[0.2em] mb-4 opacity-80">Weekly Summary</p>
+<div class="flex items-end justify-between">
+<div>
+<p class="text-xs opacity-70">Trips this week</p>
+<p class="text-3xl font-black">14</p>
+</div>
+<div class="text-right">
+<p class="text-xs opacity-70">Estimated Savings</p>
+<p class="text-3xl font-black">₹482</p>
+</div>
+</div>
+</div>
+<!-- Abstract visual element -->
+<div class="absolute -bottom-10 -right-10 w-40 h-40 bg-on-secondary/10 rounded-full blur-3xl"></div>
+</div>
+</div>
+<!-- Pagination / Load More -->
+<div class="mt-12 mb-16 flex justify-center">
+<button class="flex items-center gap-2 text-primary font-bold text-sm tracking-wide py-4 px-8 border border-primary/20 rounded-full hover:bg-primary/5 transition-all">
+                View All Activity
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-[3rem] bg-[#f3f4f5]/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-[0px_-12px_32px_rgba(25,28,29,0.04)] flex justify-around items-center px-4 py-3 pb-6 w-full">
+<a class="flex flex-col items-center justify-center text-[#191c1d] dark:text-slate-400 opacity-60 hover:bg-[#ffffff]/50 transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined mb-1">calculate</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-[0.05em] font-semibold">Calculate</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#ffffff] dark:bg-slate-800 text-[#006d37] dark:text-[#2ecc71] rounded-full px-6 py-2 shadow-sm transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-[0.05em] font-semibold">History</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#191c1d] dark:text-slate-400 opacity-60 hover:bg-[#ffffff]/50 transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined mb-1">settings</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-[0.05em] font-semibold">Settings</span>
+</a>
+</nav>
+<script src="nav.js"></script>
+</body></html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tonal-shift {
+            background-image: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.02) 100%);
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "on-surface": "#191c1d",
+                "on-secondary-container": "#00476e",
+                "surface": "#f8f9fa",
+                "secondary": "#006397",
+                "on-background": "#191c1d",
+                "background": "#f8f9fa",
+                "on-primary-container": "#005027",
+                "surface-container-high": "#e7e8e9",
+                "on-tertiary-fixed": "#390c00",
+                "surface-container-lowest": "#ffffff",
+                "surface-container": "#edeeef",
+                "surface-dim": "#d9dadb",
+                "secondary-container": "#5cb8fd",
+                "on-surface-variant": "#3d4a3e",
+                "on-tertiary-container": "#772e14",
+                "on-primary-fixed": "#00210c",
+                "on-secondary-fixed-variant": "#004b73",
+                "surface-container-highest": "#e1e3e4",
+                "on-primary-fixed-variant": "#005228",
+                "on-primary": "#ffffff",
+                "inverse-primary": "#4ae183",
+                "surface-tint": "#006d37",
+                "primary-fixed-dim": "#4ae183",
+                "error-container": "#ffdad6",
+                "tertiary": "#98472a",
+                "surface-container-low": "#f3f4f5",
+                "on-secondary": "#ffffff",
+                "primary-container": "#2ecc71",
+                "on-tertiary-fixed-variant": "#793015",
+                "primary-fixed": "#6bfe9c",
+                "primary": "#006d37",
+                "on-secondary-fixed": "#001d31",
+                "error": "#ba1a1a",
+                "tertiary-container": "#ff9875",
+                "tertiary-fixed-dim": "#ffb59d",
+                "on-tertiary": "#ffffff",
+                "secondary-fixed": "#cce5ff",
+                "on-error": "#ffffff",
+                "inverse-surface": "#2e3132",
+                "surface-bright": "#f8f9fa",
+                "surface-variant": "#e1e3e4",
+                "secondary-fixed-dim": "#92ccff",
+                "outline-variant": "#bbcbbb",
+                "tertiary-fixed": "#ffdbd0",
+                "outline": "#6c7b6d",
+                "inverse-on-surface": "#f0f1f2",
+                "on-error-container": "#93000a"
+            },
+            "borderRadius": {
+                "DEFAULT": "1rem",
+                "lg": "2rem",
+                "xl": "3rem",
+                "full": "9999px"
+            },
+            "fontFamily": {
+                "headline": ["Manrope"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- Screen Content Underlay (Blurred/Dimmed Map Simulation) -->
+<div class="fixed inset-0 z-0">
+<div class="absolute inset-0 bg-black/40 z-10 backdrop-blur-[2px]"></div>
+<div class="w-full h-full bg-surface-container">
+<!-- Simulated Map Background -->
+<img class="w-full h-full object-cover" data-alt="Minimalist vector map of a city with green transit lines and soft grey streets in a clean editorial style" data-location="San Francisco" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCeb9UfrI6-UTdeZnRNWcGPKj2YazRhfGbxwtX1hy0ngp6PNM2P4xYjE4XVppxqLVDzKqUaCDQb_1IUwcjpm2oHZUZQpVmGxmcsbx_Zm8Tj-_jcYuomFBDloAB8X-_eQnjjI8bz4HCHig9g3XDbvWx5atDpUMZwyVDfBbrQyZ8ZMIdJmvK30lQVwm-lLDJkHJMZ8bJNs5uS8EH0jAqWHichmHcHtyJA1M6TXMZViiDD0tocj7OsLwjBB5csJ6mTlw4WnKnjPU0Aoo4"/>
+<!-- Main Content UI (partially visible) -->
+<div class="absolute inset-x-6 bottom-12 z-20 space-y-4">
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-lg">
+<div class="text-label-sm uppercase tracking-widest text-outline mb-2">Estimated Fare</div>
+<div class="font-headline text-5xl font-black text-primary">$24.50</div>
+</div>
+</div>
+</div>
+</div>
+<!-- NavigationDrawer Shell -->
+<!-- Applying style_shell_layout and style_bg_color from JSON -->
+<aside class="fixed inset-y-0 left-0 z-50 flex flex-col h-full py-8 bg-slate-50 dark:bg-slate-950 h-full w-80 rounded-r-3xl shadow-2xl dark:shadow-none transform transition-transform duration-300 ease-out">
+<!-- Profile Header Segment -->
+<!-- Applying header_layout: left_align -->
+<div class="px-8 mb-10 flex flex-col items-start">
+<div class="relative mb-4 group">
+<div class="w-20 h-20 rounded-full overflow-hidden border-4 border-primary-container/20">
+<img alt="User profile photo" class="w-full h-full object-cover" data-alt="Close-up professional portrait of a man with a friendly expression, soft natural lighting, editorial aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyVc9BnMr3YimUnUmoLCjzaU-hDFDBzF2ZmZxq9xmvG6dvEEI6ZFVkczlwuE99tgPkju4bA6SDtLt1hRPRhe_mXQhgjui1_7bDrr_SBb62nMognhWrWapPc8dEYfaD9h1loIB7EIIQ_od9Lj2S9WFtJrQuEaRYz63zDF7o6_NTy2pxQGjz9Tzt1BCpnpcHpcN3RvEXYQvRdb9mZPO43RGE7YFhEIGh2ojALlTKx1FC14GNcqo5PzGiysq0q92CJ_JKrnRWhCkmBdA"/>
+</div>
+<div class="absolute bottom-0 right-0 w-6 h-6 bg-primary-container rounded-full flex items-center justify-center border-2 border-surface-container-lowest">
+<span class="material-symbols-outlined text-[14px] text-on-primary-container" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<div class="space-y-1">
+<h2 class="font-headline text-2xl font-extrabold tracking-tight text-on-surface">Alex Thompson</h2>
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase tracking-tighter">Premium Member</span>
+</div>
+<p class="text-sm font-medium text-primary mt-2 flex items-center gap-1 cursor-pointer">
+                    View Profile 
+                    <span class="material-symbols-outlined text-xs">arrow_forward_ios</span>
+</p>
+</div>
+</div>
+<!-- Navigation Items -->
+<nav class="flex-1 px-4 space-y-2">
+<!-- Calculate (Active) -->
+<!-- Applying style_active_navigation and style_universal_hover -->
+<a class="flex items-center gap-4 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-100 rounded-full px-6 py-4 font-bold transition-all scale-95 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calculate</span>
+<span class="text-lg">Calculator</span>
+</a>
+<!-- History (Inactive) -->
+<!-- Applying style_inactive_navigation and style_universal_hover -->
+<a class="flex items-center gap-4 text-slate-600 dark:text-slate-400 px-6 py-4 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors rounded-full" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="text-lg">History</span>
+</a>
+<!-- Settings (Inactive) -->
+<a class="flex items-center gap-4 text-slate-600 dark:text-slate-400 px-6 py-4 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors rounded-full" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-lg">Settings</span>
+</a>
+</nav>
+<!-- Bottom Actions -->
+<div class="mt-auto px-4">
+<!-- Sign Out -->
+<button class="w-full flex items-center gap-4 text-error px-6 py-4 hover:bg-error-container/20 transition-colors rounded-full mb-4">
+<span class="material-symbols-outlined">logout</span>
+<span class="text-lg font-bold">Sign Out</span>
+</button>
+</div>
+<!-- App Brand Anchor -->
+<div class="px-8 border-t border-slate-200 dark:border-slate-800 pt-6">
+<div class="text-2xl font-black text-emerald-700 dark:text-emerald-400 font-headline">FairRide</div>
+<p class="text-[10px] text-slate-400 font-medium tracking-widest uppercase mt-1">Version 2.4.0-Emerald</p>
+</div>
+</aside>
+<!-- Drawer Drag Handle (Visual Indicator) -->
+<div class="fixed top-1/2 left-80 -translate-y-1/2 ml-2 z-50">
+<div class="w-1.5 h-12 bg-white/30 backdrop-blur-md rounded-full shadow-sm"></div>
+</div>
+</body></html>
