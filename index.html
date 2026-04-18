@@ -7,6 +7,9 @@
   <meta name="description" content="Calculate fair ride prices based on distance, vehicle type, fuel, and mileage."/>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+  <!-- Leaflet Map (100% Free) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
   <script>
     tailwind.config = {
@@ -14,8 +17,8 @@
       theme: {
         extend: {
           colors: {
-            primary: '#006d37', 'primary-container': '#2ecc71',
-            'on-primary': '#ffffff', 'on-primary-container': '#005027',
+            primary: 'var(--primary)', 'primary-container': '#2ecc71',
+            'on-primary': '#ffffff', 'on-primary-container': 'var(--on-primary-container)',
             secondary: '#006397', 'secondary-container': '#5cb8fd',
             'on-secondary': '#ffffff', 'on-secondary-container': '#00476e',
             tertiary: '#98472a', 'tertiary-container': '#ff9875',
@@ -24,9 +27,9 @@
             'surface-container-lowest': '#ffffff',
             'surface-container-low': '#f3f4f5',
             'surface-container': '#edeeef',
-            'surface-container-high': '#e7e8e9',
+            'surface-container-high': 'var(--surface-container-high)',
             'surface-container-highest': '#e1e3e4',
-            'on-surface': '#191c1d', 'on-surface-variant': '#3d4a3e',
+            'on-surface': 'var(--on-surface)', 'on-surface-variant': 'var(--on-surface-variant)',
             outline: '#6c7b6d', 'outline-variant': '#bbcbbb',
             'inverse-surface': '#2e3132', 'inverse-primary': '#4ae183',
             'primary-fixed': '#6bfe9c', 'primary-fixed-dim': '#4ae183',
@@ -40,7 +43,7 @@
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-    body { min-height: 100dvh; background: #f8f9fa; color: #191c1d; overflow-x: hidden; }
+    body { min-height: 100dvh; background: #f8f9fa; color: var(--on-surface); overflow-x: hidden; }
     .material-symbols-outlined { font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; line-height: 1; user-select: none; }
 
     /* Page system */
@@ -70,16 +73,44 @@
     .scrollbar-hide { -ms-overflow-style:none;scrollbar-width:none; }
     .scrollbar-hide::-webkit-scrollbar { display:none; }
 
+    /* ── Map Section ── */
+    #map-container { border-radius: 0 0 1rem 1rem; overflow: hidden; position: relative; }
+    #fairride-map { height: 280px; width: 100%; z-index: 1; }
+    html.dark #fairride-map { filter: brightness(.85) contrast(1.1) saturate(.8); }
+    .map-card { background: var(--surface-highest); border-radius: 1rem; overflow: hidden; border: 1px solid var(--border-light); }
+    .map-search-input { width: 100%; background: var(--surface-container-low); border: 1px solid var(--border-light); border-radius: .75rem; padding: .7rem 1rem .7rem 2.5rem; font-size: .85rem; font-weight: 600; color: var(--on-surface); outline: none; font-family: 'Inter', sans-serif; transition: border-color .2s, box-shadow .2s; }
+    .map-search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(46,204,113,.15); }
+    .map-search-input::placeholder { color: var(--outline); font-weight: 500; }
+    .map-search-wrap { position: relative; }
+    .map-search-wrap .search-icon { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--outline); pointer-events: none; }
+    .map-suggestions { position: absolute; top: 100%; left: 0; right: 0; z-index: 100; background: var(--surface-highest); border: 1px solid var(--border-light); border-radius: .75rem; margin-top: 4px; max-height: 200px; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,.12); display: none; }
+    .map-suggestions.show { display: block; }
+    .map-suggestion-item { padding: .65rem 1rem; font-size: .8rem; color: var(--on-surface); cursor: pointer; display: flex; align-items: center; gap: .5rem; transition: background .15s; border-bottom: 1px solid var(--border-light); }
+    .map-suggestion-item:last-child { border-bottom: none; }
+    .map-suggestion-item:hover { background: var(--primary-container-alpha); }
+    .map-suggestion-item .material-symbols-outlined { font-size: 16px; color: var(--outline); }
+    .map-loc-btn { display: flex; align-items: center; justify-content: center; gap: .4rem; padding: .6rem 1rem; border-radius: 9999px; border: 1px solid var(--border-light); background: var(--surface-highest); color: var(--primary); font-size: .75rem; font-weight: 700; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .map-loc-btn:hover { background: var(--primary-container-alpha); border-color: var(--primary); }
+    .map-loc-btn:active { transform: scale(.96); }
+    .map-loc-btn .material-symbols-outlined { font-size: 16px; }
+    .map-route-info { display: flex; align-items: center; gap: .75rem; padding: .75rem 1rem; background: var(--primary-container-alpha); border-radius: .75rem; }
+    .map-route-info .route-km { font-family: 'Manrope', sans-serif; font-size: 1.3rem; font-weight: 900; color: var(--primary); }
+    .map-route-info .route-time { font-size: .8rem; font-weight: 600; color: var(--on-surface-variant); }
+    .map-point-label { display: inline-flex; align-items: center; gap: .3rem; font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--outline); padding-left: .15rem; }
+    .map-point-label .dot { width: 8px; height: 8px; border-radius: 9999px; }
+    .map-point-label .dot.start { background: #2ecc71; }
+    .map-point-label .dot.end { background: #e74c3c; }
+
     /* Pill button active state */
-    .vehicle-btn.active { background:#2ecc71;color:#005027;font-weight:700; }
-    .vehicle-btn:not(.active) { background:#e7e8e9;color:#191c1d;font-weight:600; }
-    .fuel-btn.active { background:#fff;color:#006d37;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.1); }
-    .fuel-btn:not(.active) { background:transparent;color:#3d4a3e;font-weight:600; }
+    .vehicle-btn.active { background:#2ecc71;color: var(--on-primary-container);font-weight:700; }
+    .vehicle-btn:not(.active) { background:#e7e8e9;color: var(--on-surface);font-weight:600; }
+    .fuel-btn.active { background:#fff;color: var(--primary);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.1); }
+    .fuel-btn:not(.active) { background:transparent;color: var(--on-surface-variant);font-weight:600; }
 
     /* Bottom nav active */
-    .nav-tab.active { background:#fff;color:#006d37;border-radius:9999px;padding:.5rem 1.5rem;box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    .nav-tab.active { background:#fff;color: var(--primary);border-radius:9999px;padding:.5rem 1.5rem;box-shadow:0 1px 4px rgba(0,0,0,.08); }
     .nav-tab.active .material-symbols-outlined { font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
-    .nav-tab:not(.active) { color:#191c1d;opacity:.55;padding:.5rem .75rem; }
+    .nav-tab:not(.active) { color: var(--on-surface);opacity:.55;padding:.5rem .75rem; }
 
     /* Fairness states */
     .hero-card { transition:background .35s, color .35s; }
@@ -90,6 +121,59 @@
     /* Toast */
     #toast { position:fixed;bottom:6rem;left:50%;transform:translateX(-50%) translateY(1rem);background:#191c1d;color:#fff;padding:.6rem 1.2rem;border-radius:9999px;font-size:.8rem;font-weight:600;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:99999;white-space:nowrap; }
     #toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+
+    
+    html.dark .vehicle-btn:not(.active) { background: #161819; color: #e1e3e4; }
+    html.dark .vehicle-btn.active { background: #004d26; color: #4ae183; border-color: rgba(74,225,131,.4); box-shadow: 0 0 8px rgba(74,225,131,.15); }
+    html.dark .fuel-btn:not(.active) { color: #bbcbbb; }
+    html.dark .fuel-btn.active { background: #2e3132; color: #4ae183; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+    html.dark .nav-tab:not(.active) { color: #e1e3e4; opacity: .7; }
+    html.dark .nav-tab.active { background: #1e2122; color: #4ae183; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+    html.dark .settings-veh-btn { color: #bbcbbb !important; background: #161819 !important; }
+    html.dark .settings-veh-btn.active { background: #004d26 !important; color: #4ae183 !important; }
+    html.dark .toast { color: #e1e3e4 !important; }
+    
+    html.dark .hero-card.fair { background: linear-gradient(135deg, #004d26, #065f46); }
+    html.dark #fairness-badge { background: rgba(74,225,131,.15); }
+    html.dark #fairness-badge span { color: #4ae183; }
+
+    :root {
+      --primary: #006d37;
+      --on-primary-container: #005027;
+      --primary-container: #d1fae5;
+      --primary-container-alpha: rgba(46,204,113,0.15);
+      
+      --on-surface: #191c1d;
+      --on-surface-variant: #3d4a3e;
+      --outline: #6c7b6d;
+      --outline-alpha: rgba(61,74,62,.6);
+      
+      --surface-highest: #fff;
+      --surface-container-high: #e7e8e9;
+      --surface-container-low: #f3f4f5;
+      --surface: #f8f9fa;
+      --surface-alpha: rgba(248, 249, 250, 0.95);
+      --border-light: rgba(187,203,187,.25);
+    }
+
+    html.dark {
+      --primary: #4ae183;
+      --on-primary-container: #4ae183;
+      --primary-container: rgba(46,204,113,0.15);
+      --primary-container-alpha: rgba(46,204,113,0.10);
+      
+      --on-surface: #e1e3e4;
+      --on-surface-variant: #bbcbbb;
+      --outline: #8e918f;
+      --outline-alpha: rgba(142,145,143,.6);
+      
+      --surface-highest: #1e2122;
+      --surface-container-high: #161819;
+      --surface-container-low: #1a1d1e;
+      --surface: #0f1116;
+      --surface-alpha: rgba(15, 17, 22, 0.95);
+      --border-light: rgba(255,255,255,0.08);
+    }
 
     /* Dark mode overrides */
     html.dark body { background:#0f1116;color:#e1e3e4; }
@@ -120,12 +204,12 @@
         <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyVc9BnMr3YimUnUmoLCjzaU-hDFDBzF2ZmZxq9xmvG6dvEEI6ZFVkczlwuE99tgPkju4bA6SDtLt1hRPRhe_mXQhgjui1_7bDrr_SBb62nMognhWrWapPc8dEYfaD9h1loIB7EIIQ_od9Lj2S9WFtJrQuEaRYz63zDF7o6_NTy2pxQGjz9Tzt1BCpnpcHpcN3RvEXYQvRdb9mZPO43RGE7YFhEIGh2ojALlTKx1FC14GNcqo5PzGiysq0q92CJ_JKrnRWhCkmBdA"
              style="width:100%;height:100%;object-fit:cover;" alt="Profile"/>
       </div>
-      <div style="position:absolute;bottom:0;right:0;width:1.35rem;height:1.35rem;background:#2ecc71;border-radius:9999px;display:flex;align-items:center;justify-content:center;border:2px solid #f8f9fa;">
-        <span class="material-symbols-outlined" style="font-size:11px;color:#005027;font-variation-settings:'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 20;">verified</span>
+      <div style="position:absolute;bottom:0;right:0;width:1.35rem;height:1.35rem;background:#2ecc71;border-radius:9999px;display:flex;align-items:center;justify-content:center;border: 2px solid var(--surface);">
+        <span class="material-symbols-outlined" style="font-size:11px;color: var(--on-primary-container);font-variation-settings:'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 20;">verified</span>
       </div>
     </div>
-    <h2 style="font-family:'Manrope',sans-serif;font-size:1.2rem;font-weight:800;color:#191c1d;margin:0 0 4px;letter-spacing:-.03em;" id="drawer-name">Alex Thompson</h2>
-    <span style="font-size:10px;font-weight:700;padding:2px 8px;background:#d1fae5;color:#065f46;border-radius:9999px;text-transform:uppercase;">Premium Member</span>
+    <h2 style="font-family:'Manrope',sans-serif;font-size:1.2rem;font-weight:800;color: var(--on-surface);margin:0 0 4px;letter-spacing:-.03em;" id="drawer-name">Alex Thompson</h2>
+    <span style="font-size:10px;font-weight:700;padding:2px 8px;background: var(--primary-container);color: var(--primary);border-radius:9999px;text-transform:uppercase;">Premium Member</span>
   </div>
 
   <!-- Nav Links -->
@@ -150,32 +234,32 @@
 
   <!-- Brand -->
   <div style="padding:1rem 1.5rem 0;border-top:1px solid #e1e3e4;margin-top:.5rem;">
-    <div style="font-family:'Manrope',sans-serif;font-weight:900;font-size:1.2rem;color:#006d37;">FairRide</div>
+    <div style="font-family:'Manrope',sans-serif;font-weight:900;font-size:1.2rem;color: var(--primary);">FairRide</div>
     <p style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.1em;margin:2px 0 0;">v2.4.0 · Emerald Edition</p>
   </div>
 </aside>
 
 <style>
-  .drawer-link { display:flex;align-items:center;gap:.9rem;color:#374151;border-radius:9999px;padding:.85rem 1.5rem;font-weight:600;font-size:.95rem;border:none;background:transparent;cursor:pointer;width:calc(100% - 2rem);margin:0 1rem;transition:background .2s;text-align:left; }
+  .drawer-link { display:flex;align-items:center;gap:.9rem;color: var(--on-surface);border-radius:9999px;padding:.85rem 1.5rem;font-weight:600;font-size:.95rem;border:none;background:transparent;cursor:pointer;width:calc(100% - 2rem);margin:0 1rem;transition:background .2s;text-align:left; }
   .drawer-link:hover { background:#f0fdf4; }
-  .drawer-link.active { background:#d1fae5;color:#065f46;font-weight:700; }
+  .drawer-link.active { background:#d1fae5;color: var(--primary);font-weight:700; }
   .drawer-link.active .material-symbols-outlined { font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24; }
 </style>
 
 <!-- ══════════════════ TOP APP BAR ══════════════════ -->
-<nav id="topbar" class="topbar fixed top-0 w-full z-50 flex items-center justify-between px-6 h-16" style="background:rgba(248,249,250,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(187,203,187,.2);">
+<nav id="topbar" class="topbar fixed top-0 w-full z-50 flex items-center justify-between px-6 h-16" style="background: var(--surface-alpha);backdrop-filter:blur(12px);border-bottom:1px solid rgba(187,203,187,.2);">
   <div class="flex items-center gap-3">
-    <button onclick="toggleDrawer()" style="background:none;border:none;cursor:pointer;padding:4px;color:#006d37;" aria-label="Open menu">
+    <button onclick="toggleDrawer()" style="background:none;border:none;cursor:pointer;padding:4px;color: var(--primary);" aria-label="Open menu">
       <span class="material-symbols-outlined" style="font-size:26px;">menu</span>
     </button>
     <div class="flex flex-col">
-      <span style="font-family:'Manrope',sans-serif;font-weight:900;font-size:1.1rem;color:#006d37;letter-spacing:-.04em;">FairRide</span>
-      <span style="font-size:9px;color:#6c7b6d;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-top:-2px;">Know the fair price</span>
+      <span style="font-family:'Manrope',sans-serif;font-weight:900;font-size:1.1rem;color: var(--primary);letter-spacing:-.04em;">FairRide</span>
+      <span style="font-size:9px;color: var(--outline);font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-top:-2px;">Know the fair price</span>
     </div>
   </div>
   <div class="flex items-center gap-3">
-    <span id="topbar-page-title" style="font-size:.85rem;font-weight:700;color:#006d37;letter-spacing:.02em;"></span>
-    <div style="width:32px;height:32px;border-radius:9999px;overflow:hidden;background:#e7e8e9;">
+    <span id="topbar-page-title" style="font-size:.85rem;font-weight:700;color: var(--primary);letter-spacing:.02em;"></span>
+    <div style="width:32px;height:32px;border-radius:9999px;overflow:hidden;background: var(--surface-container-high);">
       <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyVc9BnMr3YimUnUmoLCjzaU-hDFDBzF2ZmZxq9xmvG6dvEEI6ZFVkczlwuE99tgPkju4bA6SDtLt1hRPRhe_mXQhgjui1_7bDrr_SBb62nMognhWrWapPc8dEYfaD9h1loIB7EIIQ_od9Lj2S9WFtJrQuEaRYz63zDF7o6_NTy2pxQGjz9Tzt1BCpnpcHpcN3RvEXYQvRdb9mZPO43RGE7YFhEIGh2ojALlTKx1FC14GNcqo5PzGiysq0q92CJ_JKrnRWhCkmBdA"
            style="width:100%;height:100%;object-fit:cover;" alt="avatar"/>
     </div>
@@ -189,7 +273,7 @@
 
   <!-- Vehicle Select -->
   <section>
-    <label style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#3d4a3e;display:block;margin-bottom:.75rem;padding-left:.25rem;" data-i18n="vehicle_select">Select Vehicle</label>
+    <label style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color: var(--on-surface-variant);display:block;margin-bottom:.75rem;padding-left:.25rem;" data-i18n="vehicle_select">Select Vehicle</label>
     <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" id="vehicle-btns">
       <button class="vehicle-btn active flex-none px-7 py-3.5 rounded-full flex items-center gap-2 transition-all" data-vehicle="Bike" onclick="selectVehicle(this)">
         <span style="font-size:1.1rem;">🏍️</span> Bike
@@ -203,23 +287,71 @@
     </div>
   </section>
 
+  <!-- ── MAP DISTANCE PICKER ── -->
+  <section class="map-card">
+    <div style="padding: 1rem 1.25rem .75rem;">
+      <div class="flex items-center justify-between mb-3">
+        <label style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color: var(--on-surface-variant);" data-i18n="map_title">📍 Pick Route on Map</label>
+        <button class="map-loc-btn" id="btn-my-location" onclick="useMyLocation()">
+          <span class="material-symbols-outlined">my_location</span>
+          <span data-i18n="use_gps">Use GPS</span>
+        </button>
+      </div>
+
+      <!-- Start Location -->
+      <div class="space-y-1 mb-3">
+        <span class="map-point-label"><span class="dot start"></span> <span data-i18n="start_loc">Start Location</span></span>
+        <div class="map-search-wrap">
+          <span class="material-symbols-outlined search-icon">search</span>
+          <input type="text" id="map-search-start" class="map-search-input" placeholder="Search start location..." autocomplete="off" />
+          <div class="map-suggestions" id="map-suggestions-start"></div>
+        </div>
+      </div>
+
+      <!-- Destination -->
+      <div class="space-y-1 mb-3">
+        <span class="map-point-label"><span class="dot end"></span> <span data-i18n="dest_loc">Destination</span></span>
+        <div class="map-search-wrap">
+          <span class="material-symbols-outlined search-icon">search</span>
+          <input type="text" id="map-search-end" class="map-search-input" placeholder="Search destination..." autocomplete="off" />
+          <div class="map-suggestions" id="map-suggestions-end"></div>
+        </div>
+      </div>
+
+      <!-- Route info (shown after route is calculated) -->
+      <div id="map-route-info" class="map-route-info" style="display:none;">
+        <span class="material-symbols-outlined" style="font-size:24px;color:var(--primary);font-variation-settings:'FILL' 1;">route</span>
+        <div style="flex:1;">
+          <span class="route-km" id="map-route-km">0 km</span>
+          <span class="route-time" id="map-route-time">0 min drive</span>
+        </div>
+        <button onclick="applyMapDistance()" style="background:var(--primary, #006d37);color:#fff;border:none;padding:.5rem 1.2rem;border-radius:9999px;font-size:.75rem;font-weight:700;cursor:pointer;transition:transform .15s;" onmousedown="this.style.transform='scale(.95)'" onmouseup="this.style.transform='scale(1)'">Apply</button>
+      </div>
+    </div>
+
+    <!-- The Map -->
+    <div id="map-container">
+      <div id="fairride-map"></div>
+    </div>
+  </section>
+
   <!-- Distance + Fuel -->
   <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
     <!-- Distance -->
-    <div class="card-bg p-6 rounded-lg space-y-2" style="background:#fff;">
-      <label style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#3d4a3e;" data-i18n="distance">Distance</label>
+    <div class="card-bg p-6 rounded-lg space-y-2" style="background: var(--surface-highest);">
+      <label style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color: var(--on-surface-variant);" data-i18n="distance">Distance</label>
       <div class="flex items-end gap-2">
         <input id="inp-distance" type="number" min="0" step="0.1" value="12.5"
-               style="background:transparent;border:none;outline:none;font-family:'Manrope',sans-serif;font-size:2.5rem;font-weight:800;color:#191c1d;width:100%;padding:0;"
+               style="background:transparent;border:none;outline:none;font-family:'Manrope',sans-serif;font-size:2.5rem;font-weight:800;color: var(--on-surface);width:100%;padding:0;"
                placeholder="0.0" oninput="onDistanceChange()"/>
-        <span style="font-size:1.2rem;font-family:'Manrope',sans-serif;font-weight:700;color:#6c7b6d;padding-bottom:6px;">KM</span>
+        <span style="font-size:1.2rem;font-family:'Manrope',sans-serif;font-weight:700;color: var(--outline);padding-bottom:6px;">KM</span>
       </div>
     </div>
 
     <!-- Fuel Type -->
-    <div class="card-bg p-6 rounded-lg space-y-4" style="background:#fff;">
-      <label style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#3d4a3e;" data-i18n="fuel_type">Fuel Type</label>
-      <div style="background:#e7e8e9;border-radius:9999px;padding:4px;display:flex;" id="fuel-btns">
+    <div class="card-bg p-6 rounded-lg space-y-4" style="background: var(--surface-highest);">
+      <label style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color: var(--on-surface-variant);" data-i18n="fuel_type">Fuel Type</label>
+      <div style="background: var(--surface-container-high);border-radius:9999px;padding:4px;display:flex;" id="fuel-btns">
         <button class="fuel-btn active flex-1 py-2 rounded-full text-xs transition-all" data-fuel="Petrol" onclick="selectFuel(this)">Petrol</button>
         <button class="fuel-btn flex-1 py-2 rounded-full text-xs transition-all" data-fuel="Diesel" onclick="selectFuel(this)">Diesel</button>
         <button class="fuel-btn flex-1 py-2 rounded-full text-xs transition-all" data-fuel="LPG" onclick="selectFuel(this)">LPG</button>
@@ -230,23 +362,23 @@
   <!-- Mileage + Fuel Price -->
   <div class="flex flex-col md:flex-row gap-4">
     <!-- Mileage -->
-    <div class="flex-1 card-bg p-5 rounded-lg border" style="background:#fff;border-color:rgba(187,203,187,.25);">
-      <label style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6c7b6d;" data-i18n="mileage">Vehicle Mileage</label>
+    <div class="flex-1 card-bg p-5 rounded-lg border" style="background: var(--surface-highest);border-color: var(--border-light);">
+      <label style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color: var(--outline);" data-i18n="mileage">Vehicle Mileage</label>
       <div class="flex items-center gap-1 mt-1">
         <input id="inp-mileage" type="number" min="1" step="0.5"
-               style="background:transparent;border:none;outline:none;font-size:1.15rem;font-weight:700;color:#191c1d;width:100%;padding:0;"
+               style="background:transparent;border:none;outline:none;font-size:1.15rem;font-weight:700;color: var(--on-surface);width:100%;padding:0;"
                oninput="onMileageChange()"/>
-        <span style="font-size:.8rem;font-weight:600;color:#6c7b6d;white-space:nowrap;">km/L</span>
+        <span style="font-size:.8rem;font-weight:600;color: var(--outline);white-space:nowrap;">km/L</span>
       </div>
-      <p style="font-size:9px;color:#6c7b6d;font-style:italic;margin-top:4px;" data-i18n="adjust_vehicle">Adjust based on your vehicle</p>
+      <p style="font-size:9px;color: var(--outline);font-style:italic;margin-top:4px;" data-i18n="adjust_vehicle">Adjust based on your vehicle</p>
     </div>
 
     <!-- Fuel Price -->
-    <div class="flex-1 card-bg p-5 rounded-lg border" style="background:#fff;border-color:rgba(187,203,187,.25);">
+    <div class="flex-1 card-bg p-5 rounded-lg border" style="background: var(--surface-highest);border-color: var(--border-light);">
       <div class="flex justify-between items-center">
-        <label style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6c7b6d;" data-i18n="fuel_price">Fuel Price (₹/L)</label>
+        <label style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color: var(--outline);" data-i18n="fuel_price">Fuel Price (₹/L)</label>
         <div class="flex items-center gap-1" id="live-fuel-indicator">
-          <span style="font-size:9px;font-weight:700;color:#006d37;" id="live-fuel-text">LIVE</span>
+          <span style="font-size:9px;font-weight:700;color: var(--primary);" id="live-fuel-text">LIVE</span>
           <div style="width:24px;height:12px;background:rgba(0,109,55,.15);border-radius:9999px;position:relative;">
              <!-- animation element -->
              <div id="live-fuel-dot" style="position:absolute;right:0;width:12px;height:12px;background:#006d37;border-radius:9999px;"></div>
@@ -254,7 +386,7 @@
         </div>
       </div>
       <input id="inp-fuelprice" type="number" min="1" step="0.5"
-             style="background:transparent;border:none;outline:none;font-size:1.15rem;font-weight:700;color:#191c1d;width:100%;padding:0;margin-top:4px;"
+             style="background:transparent;border:none;outline:none;font-size:1.15rem;font-weight:700;color: var(--on-surface);width:100%;padding:0;margin-top:4px;"
              oninput="onFuelPriceChange()"/>
     </div>
   </div>
@@ -262,22 +394,22 @@
   <!-- Time + Multipliers -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <!-- Trip Time -->
-    <div class="card-bg p-5 rounded-lg border" style="background:#fff;border-color:rgba(187,203,187,.25);">
-      <label style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6c7b6d;" data-i18n="trip_time">Trip Time</label>
+    <div class="card-bg p-5 rounded-lg border" style="background: var(--surface-highest);border-color: var(--border-light);">
+      <label style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color: var(--outline);" data-i18n="trip_time">Trip Time</label>
       <div class="flex items-center gap-1 mt-1">
         <input id="inp-time" type="number" min="0" step="1"
-               style="background:transparent;border:none;outline:none;font-size:1.15rem;font-weight:700;color:#191c1d;width:100%;padding:0;"
+               style="background:transparent;border:none;outline:none;font-size:1.15rem;font-weight:700;color: var(--on-surface);width:100%;padding:0;"
                oninput="onTimeChange()"/>
-        <span style="font-size:.8rem;font-weight:600;color:#6c7b6d;">mins</span>
+        <span style="font-size:.8rem;font-weight:600;color: var(--outline);">mins</span>
       </div>
-      <p style="font-size:9px;color:#6c7b6d;font-style:italic;margin-top:4px;" data-i18n="idle_charge">Used for Traffic/Idle charge</p>
+      <p style="font-size:9px;color: var(--outline);font-style:italic;margin-top:4px;" data-i18n="idle_charge">Used for Traffic/Idle charge</p>
     </div>
 
     <!-- Night Shift -->
-    <div class="card-bg p-5 rounded-lg border flex justify-between items-center" style="background:#fff;border-color:rgba(187,203,187,.25);">
+    <div class="card-bg p-5 rounded-lg border flex justify-between items-center" style="background: var(--surface-highest);border-color: var(--border-light);">
       <div>
-        <label style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6c7b6d;" data-i18n="night_shift">Night Shift</label>
-        <p style="font-size:9px;color:#6c7b6d;margin-top:2px;" data-i18n="night_time">10 PM - 5 AM</p>
+        <label style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color: var(--outline);" data-i18n="night_shift">Night Shift</label>
+        <p style="font-size:9px;color: var(--outline);margin-top:2px;" data-i18n="night_time">10 PM - 5 AM</p>
       </div>
       <div class="toggle-track" id="toggle-night" onclick="toggleNight()">
         <div class="toggle-thumb"></div>
@@ -285,10 +417,10 @@
     </div>
 
     <!-- Demand Surge -->
-    <div class="card-bg p-5 rounded-lg border flex justify-between items-center" style="background:#fff;border-color:rgba(187,203,187,.25);">
+    <div class="card-bg p-5 rounded-lg border flex justify-between items-center" style="background: var(--surface-highest);border-color: var(--border-light);">
       <div>
-        <label style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6c7b6d;" data-i18n="traffic_rain">Traffic / Rain</label>
-        <p style="font-size:9px;color:#6c7b6d;margin-top:2px;" data-i18n="surge_mult">Surge multiplier</p>
+        <label style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color: var(--outline);" data-i18n="traffic_rain">Traffic / Rain</label>
+        <p style="font-size:9px;color: var(--outline);margin-top:2px;" data-i18n="surge_mult">Surge multiplier</p>
       </div>
       <div class="toggle-track" id="toggle-surge" onclick="toggleSurge()">
         <div class="toggle-thumb"></div>
@@ -334,7 +466,7 @@
 
   <!-- Action Buttons -->
   <div class="flex gap-3">
-    <button onclick="resetCalc()" class="flex-1 flex items-center justify-center gap-2 py-4 rounded-full font-bold transition-all active:scale-95 card-bg" style="background:#fff;border:1px solid rgba(187,203,187,.3);color:#191c1d;font-size:.95rem;">
+    <button onclick="resetCalc()" class="flex-1 flex items-center justify-center gap-2 py-4 rounded-full font-bold transition-all active:scale-95 card-bg" style="background: var(--surface-highest);border:1px solid rgba(187,203,187,.3);color: var(--on-surface);font-size:.95rem;">
       <span class="material-symbols-outlined">refresh</span data-i18n="reset">Reset</button>
     <button onclick="shareFare()" class="flex-1 flex items-center justify-center gap-2 py-4 rounded-full font-bold text-white active:scale-95 transition-all" style="background:#006397;font-size:.95rem;">
       <span class="material-symbols-outlined">share</span data-i18n="share_fare">Share Fare</button>
@@ -343,30 +475,30 @@
   <!-- ── VEHICLE COMPARISON ── -->
   <section class="space-y-3">
     <div class="flex justify-between items-center px-1">
-      <h3 style="font-family:'Manrope',sans-serif;font-weight:700;font-size:1rem;color:#191c1d;" data-i18n="veh_comp">Vehicle Comparison</h3>
-      <span style="font-size:.75rem;font-weight:700;color:#006d37;" data-i18n="vs_std">vs Standard Mileage</span>
+      <h3 style="font-family:'Manrope',sans-serif;font-weight:700;font-size:1rem;color: var(--on-surface);" data-i18n="veh_comp">Vehicle Comparison</h3>
+      <span style="font-size:.75rem;font-weight:700;color: var(--primary);" data-i18n="vs_std">vs Standard Mileage</span>
     </div>
     <div class="flex gap-4 overflow-x-auto pb-4 -mx-5 px-5 scrollbar-hide" id="comparison-cards">
       <!-- Bike -->
-      <div class="flex-none w-44 card-bg p-5 rounded-xl border hover:border-primary/30 transition-all" style="background:#fff;border-color:rgba(187,203,187,.2);">
+      <div class="flex-none w-44 card-bg p-5 rounded-xl border hover:border-primary/30 transition-all" style="background: var(--surface-highest);border-color: var(--border-light);">
         <span style="font-size:1.5rem;display:block;margin-bottom:.5rem;">🏍️</span>
-        <h4 style="font-weight:700;font-size:.9rem;color:#191c1d;margin:0 0 4px;">Bike</h4>
-        <p id="cmp-bike" style="font-family:'Manrope',sans-serif;font-size:1.4rem;font-weight:800;color:#006d37;margin:0;">₹0</p>
-        <p id="cmp-bike-km" style="font-size:9px;color:#6c7b6d;font-weight:700;margin:2px 0 0;">~ ₹0/km</p>
+        <h4 style="font-weight:700;font-size:.9rem;color: var(--on-surface);margin:0 0 4px;">Bike</h4>
+        <p id="cmp-bike" style="font-family:'Manrope',sans-serif;font-size:1.4rem;font-weight:800;color: var(--primary);margin:0;">₹0</p>
+        <p id="cmp-bike-km" style="font-size:9px;color: var(--outline);font-weight:700;margin:2px 0 0;">~ ₹0/km</p>
       </div>
       <!-- Auto -->
-      <div class="flex-none w-44 card-bg p-5 rounded-xl border hover:border-primary/30 transition-all" style="background:#fff;border-color:rgba(187,203,187,.2);">
+      <div class="flex-none w-44 card-bg p-5 rounded-xl border hover:border-primary/30 transition-all" style="background: var(--surface-highest);border-color: var(--border-light);">
         <span style="font-size:1.5rem;display:block;margin-bottom:.5rem;">🚖</span>
-        <h4 style="font-weight:700;font-size:.9rem;color:#191c1d;margin:0 0 4px;">Auto</h4>
-        <p id="cmp-auto" style="font-family:'Manrope',sans-serif;font-size:1.4rem;font-weight:800;color:#191c1d;margin:0;">₹0</p>
-        <p id="cmp-auto-km" style="font-size:9px;color:#6c7b6d;font-weight:700;margin:2px 0 0;">~ ₹0/km</p>
+        <h4 style="font-weight:700;font-size:.9rem;color: var(--on-surface);margin:0 0 4px;">Auto</h4>
+        <p id="cmp-auto" style="font-family:'Manrope',sans-serif;font-size:1.4rem;font-weight:800;color: var(--on-surface);margin:0;">₹0</p>
+        <p id="cmp-auto-km" style="font-size:9px;color: var(--outline);font-weight:700;margin:2px 0 0;">~ ₹0/km</p>
       </div>
       <!-- Car -->
-      <div class="flex-none w-44 card-bg p-5 rounded-xl border hover:border-primary/30 transition-all" style="background:#fff;border-color:rgba(187,203,187,.2);">
+      <div class="flex-none w-44 card-bg p-5 rounded-xl border hover:border-primary/30 transition-all" style="background: var(--surface-highest);border-color: var(--border-light);">
         <span style="font-size:1.5rem;display:block;margin-bottom:.5rem;">🚗</span>
-        <h4 style="font-weight:700;font-size:.9rem;color:#191c1d;margin:0 0 4px;">Car</h4>
-        <p id="cmp-car" style="font-family:'Manrope',sans-serif;font-size:1.4rem;font-weight:800;color:#191c1d;margin:0;">₹0</p>
-        <p id="cmp-car-km" style="font-size:9px;color:#6c7b6d;font-weight:700;margin:2px 0 0;">~ ₹0/km</p>
+        <h4 style="font-weight:700;font-size:.9rem;color: var(--on-surface);margin:0 0 4px;">Car</h4>
+        <p id="cmp-car" style="font-family:'Manrope',sans-serif;font-size:1.4rem;font-weight:800;color: var(--on-surface);margin:0;">₹0</p>
+        <p id="cmp-car-km" style="font-size:9px;color: var(--outline);font-weight:700;margin:2px 0 0;">~ ₹0/km</p>
       </div>
     </div>
   </section>
@@ -379,21 +511,21 @@
 
   <!-- Header -->
   <section style="margin:1.5rem 0 2rem;">
-    <p style="font-size:10px;text-transform:uppercase;letter-spacing:.15em;font-weight:700;color:#006d37;margin-bottom:.4rem;" data-i18n="act_journal">Activity Journal</p>
+    <p style="font-size:10px;text-transform:uppercase;letter-spacing:.15em;font-weight:700;color: var(--primary);margin-bottom:.4rem;" data-i18n="act_journal">Activity Journal</p>
     <h2 style="font-family:'Manrope',sans-serif;font-size:2.5rem;font-weight:900;letter-spacing:-.04em;line-height:1.1;margin:0;" data-i18n="trip_history_title"><span data-i18n="trip_history_title">Trip<br/>History</span></h2>
   </section>
 
   <!-- Filter row -->
   <div class="flex gap-3 overflow-x-auto pb-3 scrollbar-hide mb-6">
-    <button onclick="filterHistory('all')" class="hist-filter flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold card-bg active-filter transition-all" data-filter="all" style="background:#fff;white-space:nowrap;box-shadow:0 2px 10px rgba(25,28,29,.06);">
+    <button onclick="filterHistory('all')" class="hist-filter flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold card-bg active-filter transition-all" data-filter="all" style="background: var(--surface-highest);white-space:nowrap;box-shadow:0 2px 10px rgba(25,28,29,.06);">
       <span class="material-symbols-outlined" style="font-size:16px;">list</span data-i18n="all_trips">All Trips</button>
-    <button onclick="filterHistory('Bike')" class="hist-filter flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold card-bg transition-all" data-filter="Bike" style="background:#fff;white-space:nowrap;box-shadow:0 2px 10px rgba(25,28,29,.06);">
+    <button onclick="filterHistory('Bike')" class="hist-filter flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold card-bg transition-all" data-filter="Bike" style="background: var(--surface-highest);white-space:nowrap;box-shadow:0 2px 10px rgba(25,28,29,.06);">
       <span style="font-size:.9rem;">🏍️</span> Bike
     </button>
-    <button onclick="filterHistory('Auto')" class="hist-filter flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold card-bg transition-all" data-filter="Auto" style="background:#fff;white-space:nowrap;box-shadow:0 2px 10px rgba(25,28,29,.06);">
+    <button onclick="filterHistory('Auto')" class="hist-filter flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold card-bg transition-all" data-filter="Auto" style="background: var(--surface-highest);white-space:nowrap;box-shadow:0 2px 10px rgba(25,28,29,.06);">
       <span style="font-size:.9rem;">🚖</span> Auto
     </button>
-    <button onclick="filterHistory('Car')" class="hist-filter flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold card-bg transition-all" data-filter="Car" style="background:#fff;white-space:nowrap;box-shadow:0 2px 10px rgba(25,28,29,.06);">
+    <button onclick="filterHistory('Car')" class="hist-filter flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold card-bg transition-all" data-filter="Car" style="background: var(--surface-highest);white-space:nowrap;box-shadow:0 2px 10px rgba(25,28,29,.06);">
       <span style="font-size:.9rem;">🚗</span> Car
     </button>
     <button onclick="clearHistory()" class="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-all" style="background:rgba(186,26,26,.08);color:#ba1a1a;white-space:nowrap;">
@@ -425,8 +557,8 @@
   <!-- Empty state -->
   <div id="hist-empty" class="flex flex-col items-center justify-center py-20 text-center" style="display:none!important;">
     <span class="material-symbols-outlined" style="font-size:3.5rem;color:#bbcbbb;margin-bottom:1rem;">route</span>
-    <h3 style="font-family:'Manrope',sans-serif;font-weight:700;color:#3d4a3e;margin:0 0 .5rem;" data-i18n="no_trips">No trips yet</h3>
-    <p style="color:#6c7b6d;font-size:.875rem;">Calculate a fare first, then come back here.</p>
+    <h3 style="font-family:'Manrope',sans-serif;font-weight:700;color: var(--on-surface-variant);margin:0 0 .5rem;" data-i18n="no_trips">No trips yet</h3>
+    <p style="color: var(--outline);font-size:.875rem;">Calculate a fare first, then come back here.</p>
     <button onclick="navigate('calculator')" style="margin-top:1.5rem;background:#006d37;color:#fff;border:none;padding:.75rem 1.5rem;border-radius:9999px;font-weight:700;cursor:pointer;">Go to Calculator</button>
   </div>
 </main>
@@ -439,37 +571,37 @@
   <!-- Profile -->
   <section class="flex items-center gap-5 mt-4">
     <div style="position:relative;">
-      <div style="width:5rem;height:5rem;border-radius:9999px;overflow:hidden;background:#e7e8e9;">
+      <div style="width:5rem;height:5rem;border-radius:9999px;overflow:hidden;background: var(--surface-container-high);">
         <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyVc9BnMr3YimUnUmoLCjzaU-hDFDBzF2ZmZxq9xmvG6dvEEI6ZFVkczlwuE99tgPkju4bA6SDtLt1hRPRhe_mXQhgjui1_7bDrr_SBb62nMognhWrWapPc8dEYfaD9h1loIB7EIIQ_od9Lj2S9WFtJrQuEaRYz63zDF7o6_NTy2pxQGjz9Tzt1BCpnpcHpcN3RvEXYQvRdb9mZPO43RGE7YFhEIGh2ojALlTKx1FC14GNcqo5PzGiysq0q92CJ_JKrnRWhCkmBdA"
              style="width:100%;height:100%;object-fit:cover;" alt="Profile"/>
       </div>
-      <div style="position:absolute;bottom:-2px;right:-2px;background:#006d37;border-radius:9999px;padding:4px 5px;border:2px solid #f8f9fa;">
+      <div style="position:absolute;bottom:-2px;right:-2px;background:#006d37;border-radius:9999px;padding:4px 5px;border: 2px solid var(--surface);">
         <span class="material-symbols-outlined" style="font-size:10px;color:#fff;font-variation-settings:'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 20;">verified</span>
       </div>
     </div>
     <div>
       <h2 style="font-family:'Manrope',sans-serif;font-weight:800;font-size:1.3rem;letter-spacing:-.03em;margin:0 0 4px;">Alex Thompson</h2>
-      <p style="font-size:.8rem;font-weight:600;color:#3d4a3e;text-transform:uppercase;letter-spacing:.05em;margin:0;">Premium Member</p>
+      <p style="font-size:.8rem;font-weight:600;color: var(--on-surface-variant);text-transform:uppercase;letter-spacing:.05em;margin:0;">Premium Member</p>
     </div>
   </section>
 
   <!-- Language / Preferences -->
   <section class="space-y-4 mb-8">
-    <p data-i18n="app_pref" style="font-size:10px;text-transform:uppercase;letter-spacing:.15em;font-weight:700;color:rgba(61,74,62,.6);margin-bottom:.75rem;padding-left:.25rem;">App Preferences</p>
+    <p data-i18n="app_pref" style="font-size:10px;text-transform:uppercase;letter-spacing:.15em;font-weight:700;color: var(--outline-alpha);margin-bottom:.75rem;padding-left:.25rem;">App Preferences</p>
 
     <!-- Language Toggle -->
-    <div class="card-bg p-5 rounded-xl flex items-center justify-between" style="background:#fff;">
+    <div class="card-bg p-5 rounded-xl flex items-center justify-between" style="background: var(--surface-highest);">
       <div class="flex items-center gap-3">
-        <div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:rgba(0,109,55,.1);display:flex;align-items:center;justify-content:center;color:#006d37;">
+        <div style="width:2.5rem;height:2.5rem;border-radius:9999px;background: var(--primary-container-alpha);display:flex;align-items:center;justify-content:center;color: var(--primary);">
           <span class="material-symbols-outlined" style="font-size:20px;">translate</span>
         </div>
         <div>
-          <h4 style="font-weight:700;color:#191c1d;margin:0 0 2px;">Language</h4>
-          <p style="font-size:9px;color:#6c7b6d;margin:0;">English or Tamil</p>
+          <h4 style="font-weight:700;color: var(--on-surface);margin:0 0 2px;">Language</h4>
+          <p style="font-size:9px;color: var(--outline);margin:0;">English or Tamil</p>
         </div>
       </div>
-      <div style="background:#e7e8e9;border-radius:9999px;padding:4px;display:flex;width:120px;">
-        <button id="lang-en" class="flex-1 py-2 rounded-full text-xs font-bold transition-all" style="background:#2ecc71;color:#005027;" onclick="setLang('en')">EN</button>
+      <div style="background: var(--surface-container-high);border-radius:9999px;padding:4px;display:flex;width:120px;">
+        <button id="lang-en" class="flex-1 py-2 rounded-full text-xs font-bold transition-all" style="background:#2ecc71;color: var(--on-primary-container);" onclick="setLang('en')">EN</button>
         <button id="lang-ta" class="flex-1 py-2 rounded-full text-xs font-bold transition-all text-[#3d4a3e]" onclick="setLang('ta')">TA</button>
       </div>
     </div>
@@ -477,45 +609,45 @@
 
   <!-- Calculation Engine -->
   <div>
-    <p style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(61,74,62,.6);margin-bottom:.75rem;padding-left:.25rem;">Calculation Engine</p>
+    <p style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color: var(--outline-alpha);margin-bottom:.75rem;padding-left:.25rem;">Calculation Engine</p>
     <div class="grid grid-cols-2 gap-4">
 
       <!-- Default Vehicle -->
-      <div class="card-bg p-5 rounded-xl col-span-2" style="background:#fff;">
-        <p style="font-size:.9rem;font-weight:700;font-family:'Manrope',sans-serif;margin-bottom:.75rem;color:#191c1d;">Default Vehicle</p>
+      <div class="card-bg p-5 rounded-xl col-span-2" style="background: var(--surface-highest);">
+        <p style="font-size:.9rem;font-weight:700;font-family:'Manrope',sans-serif;margin-bottom:.75rem;color: var(--on-surface);">Default Vehicle</p>
         <div class="flex gap-3">
-          <button class="settings-veh-btn flex-1 py-3 rounded-full text-sm font-bold flex items-center justify-center gap-1.5 transition-all active" data-v="Bike" onclick="setDefaultVehicle(this)" style="background:#2ecc71;color:#005027;">
+          <button class="settings-veh-btn flex-1 py-3 rounded-full text-sm font-bold flex items-center justify-center gap-1.5 transition-all active" data-v="Bike" onclick="setDefaultVehicle(this)" style="background:#2ecc71;color: var(--on-primary-container);">
             <span class="material-symbols-outlined" style="font-size:16px;">two_wheeler</span> Bike
           </button>
-          <button class="settings-veh-btn flex-1 py-3 rounded-full text-sm font-bold flex items-center justify-center gap-1.5 transition-all" data-v="Auto" onclick="setDefaultVehicle(this)" style="background:#e7e8e9;color:#3d4a3e;">
+          <button class="settings-veh-btn flex-1 py-3 rounded-full text-sm font-bold flex items-center justify-center gap-1.5 transition-all" data-v="Auto" onclick="setDefaultVehicle(this)" style="background: var(--surface-container-high);color: var(--on-surface-variant);">
             <span class="material-symbols-outlined" style="font-size:16px;">electric_rickshaw</span> Auto
           </button>
-          <button class="settings-veh-btn flex-1 py-3 rounded-full text-sm font-bold flex items-center justify-center gap-1.5 transition-all" data-v="Car" onclick="setDefaultVehicle(this)" style="background:#e7e8e9;color:#3d4a3e;">
+          <button class="settings-veh-btn flex-1 py-3 rounded-full text-sm font-bold flex items-center justify-center gap-1.5 transition-all" data-v="Car" onclick="setDefaultVehicle(this)" style="background: var(--surface-container-high);color: var(--on-surface-variant);">
             <span class="material-symbols-outlined" style="font-size:16px;">directions_car</span> Car
           </button>
         </div>
         <div class="mt-4">
-          <label style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6c7b6d;display:block;margin-bottom:.4rem;">Default Mileage Override (km/L)</label>
+          <label style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color: var(--outline);display:block;margin-bottom:.4rem;">Default Mileage Override (km/L)</label>
           <div style="position:relative;">
             <input id="settings-mileage" type="number" min="1" step="0.5" placeholder="Leave blank for auto"
-                   style="width:100%;background:#f3f4f5;border:none;border-radius:1rem;height:3.5rem;padding:0 3.5rem 0 1.25rem;font-family:'Manrope',sans-serif;font-weight:700;font-size:1.1rem;color:#191c1d;outline:none;"
+                   style="width:100%;background: var(--surface-container-low);border:none;border-radius:1rem;height:3.5rem;padding:0 3.5rem 0 1.25rem;font-family:'Manrope',sans-serif;font-weight:700;font-size:1.1rem;color: var(--on-surface);outline:none;"
                    oninput="saveSettings()"/>
-            <div style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);font-size:.8rem;font-weight:600;color:#6c7b6d;">km/L</div>
+            <div style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);font-size:.8rem;font-weight:600;color: var(--outline);">km/L</div>
           </div>
         </div>
       </div>
 
       <!-- Profit Margin -->
-      <div class="card-bg p-5 rounded-xl col-span-2" style="background:#fff;">
+      <div class="card-bg p-5 rounded-xl col-span-2" style="background: var(--surface-highest);">
         <div class="flex items-center justify-between mb-2">
           <div>
-            <p style="font-family:'Manrope',sans-serif;font-weight:700;font-size:.95rem;color:#191c1d;margin:0 0 2px;">Driver Profit Margin</p>
-            <p style="font-size:.75rem;color:#6c7b6d;margin:0;">Percentage added on top of fuel cost</p>
+            <p style="font-family:'Manrope',sans-serif;font-weight:700;font-size:.95rem;color: var(--on-surface);margin:0 0 2px;">Driver Profit Margin</p>
+            <p style="font-size:.75rem;color: var(--outline);margin:0;">Percentage added on top of fuel cost</p>
           </div>
-          <span id="profit-pct-label" style="font-family:'Manrope',sans-serif;font-weight:800;font-size:1.5rem;color:#006d37;">20%</span>
+          <span id="profit-pct-label" style="font-family:'Manrope',sans-serif;font-weight:800;font-size:1.5rem;color: var(--primary);">20%</span>
         </div>
         <input id="settings-profit" type="range" min="5" max="50" step="5" value="20"
-               style="width:100%;accent-color:#006d37;" oninput="onProfitSlider(this)"/>
+               style="width:100%;accent-color: var(--primary);" oninput="onProfitSlider(this)"/>
         <div class="flex justify-between" style="font-size:9px;color:#9ca3af;margin-top:2px;">
           <span>5%</span><span>50%</span>
         </div>
@@ -525,32 +657,32 @@
 
   <!-- Fuel Prices -->
   <div>
-    <p style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(61,74,62,.6);margin-bottom:.75rem;padding-left:.25rem;">Fuel Prices (₹/L)</p>
-    <div class="card-bg p-5 rounded-xl space-y-4" style="background:#fff;">
+    <p style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color: var(--outline-alpha);margin-bottom:.75rem;padding-left:.25rem;">Fuel Prices (₹/L)</p>
+    <div class="card-bg p-5 rounded-xl space-y-4" style="background: var(--surface-highest);">
       <div class="flex items-center gap-4">
         <span style="font-size:1.2rem;">⛽</span>
         <div class="flex-1">
-          <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6c7b6d;">Petrol</label>
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color: var(--outline);">Petrol</label>
           <input id="settings-petrol" type="number" min="1" step="0.5" value="102"
-                 style="width:100%;background:transparent;border:none;border-bottom:1px solid #e1e3e4;padding:.25rem 0;font-size:1rem;font-weight:700;color:#191c1d;outline:none;"
+                 style="width:100%;background:transparent;border:none;border-bottom: 1px solid var(--border-light);padding:.25rem 0;font-size:1rem;font-weight:700;color: var(--on-surface);outline:none;"
                  oninput="saveSettings()"/>
         </div>
       </div>
       <div class="flex items-center gap-4">
         <span style="font-size:1.2rem;">🛢️</span>
         <div class="flex-1">
-          <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6c7b6d;">Diesel</label>
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color: var(--outline);">Diesel</label>
           <input id="settings-diesel" type="number" min="1" step="0.5" value="94"
-                 style="width:100%;background:transparent;border:none;border-bottom:1px solid #e1e3e4;padding:.25rem 0;font-size:1rem;font-weight:700;color:#191c1d;outline:none;"
+                 style="width:100%;background:transparent;border:none;border-bottom: 1px solid var(--border-light);padding:.25rem 0;font-size:1rem;font-weight:700;color: var(--on-surface);outline:none;"
                  oninput="saveSettings()"/>
         </div>
       </div>
       <div class="flex items-center gap-4">
         <span style="font-size:1.2rem;">🔵</span>
         <div class="flex-1">
-          <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6c7b6d;">LPG</label>
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color: var(--outline);">LPG</label>
           <input id="settings-lpg" type="number" min="1" step="0.5" value="70"
-                 style="width:100%;background:transparent;border:none;border-bottom:none;padding:.25rem 0;font-size:1rem;font-weight:700;color:#191c1d;outline:none;"
+                 style="width:100%;background:transparent;border:none;border-bottom:none;padding:.25rem 0;font-size:1rem;font-weight:700;color: var(--on-surface);outline:none;"
                  oninput="saveSettings()"/>
         </div>
       </div>
@@ -559,16 +691,16 @@
 
   <!-- Appearance -->
   <div>
-    <p style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(61,74,62,.6);margin-bottom:.75rem;padding-left:.25rem;">Appearance</p>
-    <div class="card-bg p-5 rounded-xl" style="background:#fff;">
+    <p style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color: var(--outline-alpha);margin-bottom:.75rem;padding-left:.25rem;">Appearance</p>
+    <div class="card-bg p-5 rounded-xl" style="background: var(--surface-highest);">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
-          <div style="width:40px;height:40px;border-radius:9999px;background:#e7e8e9;display:flex;align-items:center;justify-content:center;">
+          <div style="width:40px;height:40px;border-radius:9999px;background: var(--surface-container-high);display:flex;align-items:center;justify-content:center;">
             <span class="material-symbols-outlined" id="theme-icon" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;">light_mode</span>
           </div>
           <div>
-            <p style="font-family:'Manrope',sans-serif;font-weight:700;color:#191c1d;margin:0 0 2px;">Theme</p>
-            <p style="font-size:.75rem;color:#6c7b6d;margin:0;" id="theme-label">Currently: Light Mode</p>
+            <p style="font-family:'Manrope',sans-serif;font-weight:700;color: var(--on-surface);margin:0 0 2px;">Theme</p>
+            <p style="font-size:.75rem;color: var(--outline);margin:0;" id="theme-label">Currently: Light Mode</p>
           </div>
         </div>
         <div class="toggle-track" id="theme-toggle" onclick="toggleTheme()">
@@ -580,42 +712,42 @@
 
   <!-- Preferences -->
   <div>
-    <p style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(61,74,62,.6);margin-bottom:.75rem;padding-left:.25rem;">Preferences</p>
-    <div class="card-bg rounded-xl overflow-hidden" style="background:#fff;">
+    <p style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color: var(--outline-alpha);margin-bottom:.75rem;padding-left:.25rem;">Preferences</p>
+    <div class="card-bg rounded-xl overflow-hidden" style="background: var(--surface-highest);">
       <button class="w-full flex items-center justify-between p-5 hover:opacity-80 transition-all text-left" onclick="toast('Notifications coming soon!')">
         <div class="flex items-center gap-4">
           <div style="width:40px;height:40px;border-radius:9999px;background:#ffdbd0;display:flex;align-items:center;justify-content:center;">
             <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;color:#98472a;">notifications</span>
           </div>
           <div>
-            <p style="font-weight:700;font-family:'Manrope',sans-serif;color:#191c1d;margin:0 0 2px;">Notifications</p>
-            <p style="font-size:.75rem;color:#6c7b6d;margin:0;">Price alerts and updates</p>
+            <p style="font-weight:700;font-family:'Manrope',sans-serif;color: var(--on-surface);margin:0 0 2px;">Notifications</p>
+            <p style="font-size:.75rem;color: var(--outline);margin:0;">Price alerts and updates</p>
           </div>
         </div>
         <span class="material-symbols-outlined" style="color:#bbcbbb;">chevron_right</span>
       </button>
-      <div style="height:1px;background:#f3f4f5;margin:0 1.25rem;"></div>
+      <div style="height:1px;background: var(--surface-container-low);margin:0 1.25rem;"></div>
       <button class="w-full flex items-center justify-between p-5 hover:opacity-80 transition-all text-left" onclick="toast('Help center coming soon!')">
         <div class="flex items-center gap-4">
           <div style="width:40px;height:40px;border-radius:9999px;background:#cce5ff;display:flex;align-items:center;justify-content:center;">
             <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;color:#006397;">quiz</span>
           </div>
           <div>
-            <p style="font-weight:700;font-family:'Manrope',sans-serif;color:#191c1d;margin:0 0 2px;">Help & Support</p>
-            <p style="font-size:.75rem;color:#6c7b6d;margin:0;">FAQs and direct contact</p>
+            <p style="font-weight:700;font-family:'Manrope',sans-serif;color: var(--on-surface);margin:0 0 2px;">Help & Support</p>
+            <p style="font-size:.75rem;color: var(--outline);margin:0;">FAQs and direct contact</p>
           </div>
         </div>
         <span class="material-symbols-outlined" style="color:#bbcbbb;">chevron_right</span>
       </button>
-      <div style="height:1px;background:#f3f4f5;margin:0 1.25rem;"></div>
+      <div style="height:1px;background: var(--surface-container-low);margin:0 1.25rem;"></div>
       <button class="w-full flex items-center justify-between p-5 hover:opacity-80 transition-all text-left" onclick="toast('FairRide v2.4.0 · Emerald Edition')">
         <div class="flex items-center gap-4">
-          <div style="width:40px;height:40px;border-radius:9999px;background:#e7e8e9;display:flex;align-items:center;justify-content:center;">
-            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;color:#3d4a3e;">info</span>
+          <div style="width:40px;height:40px;border-radius:9999px;background: var(--surface-container-high);display:flex;align-items:center;justify-content:center;">
+            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;color: var(--on-surface-variant);">info</span>
           </div>
           <div>
-            <p style="font-weight:700;font-family:'Manrope',sans-serif;color:#191c1d;margin:0 0 2px;">About FairRide</p>
-            <p style="font-size:.75rem;color:#6c7b6d;margin:0;">Version 2.4.0 (Emerald Edition)</p>
+            <p style="font-weight:700;font-family:'Manrope',sans-serif;color: var(--on-surface);margin:0 0 2px;">About FairRide</p>
+            <p style="font-size:.75rem;color: var(--outline);margin:0;">Version 2.4.0 (Emerald Edition)</p>
           </div>
         </div>
         <span class="material-symbols-outlined" style="color:#bbcbbb;">chevron_right</span>
@@ -632,7 +764,7 @@
 </main>
 
 <!-- ══════════════════ BOTTOM NAV BAR ══════════════════ -->
-<footer class="bottomnav fixed bottom-0 w-full z-50" style="background:rgba(243,244,245,.85);backdrop-filter:blur(20px);border-radius:2.5rem 2.5rem 0 0;box-shadow:0 -8px 32px rgba(25,28,29,.06);">
+<footer class="bottomnav fixed bottom-0 w-full z-50" style="background: var(--surface-alpha);backdrop-filter:blur(20px);border-radius:2.5rem 2.5rem 0 0;box-shadow:0 -8px 32px rgba(25,28,29,.06);">
   <div class="flex justify-around items-center px-4 py-3 pb-5">
     <button class="nav-tab active flex flex-col items-center gap-0.5" data-page="calculator" onclick="navigate('calculator')">
       <span class="material-symbols-outlined">calculate</span>
@@ -687,7 +819,11 @@ const i18n = {
     app_pref: "App Preferences",
     fair_price: "Fair Price Calculated",
     exp_price: "Expensive Rate",
-    very_fair: "Very Reasonable"
+    very_fair: "Very Reasonable",
+    map_title: "\ud83d\udccd Pick Route on Map",
+    use_gps: "Use GPS",
+    start_loc: "Start Location",
+    dest_loc: "Destination"
   },
   ta: {
     vehicle_select: "வாகனத்தை தேர்வு செய்க",
@@ -719,7 +855,11 @@ const i18n = {
     app_pref: "பயன்பாட்டு அமைப்புகள்",
     fair_price: "நியாயமான விலை",
     exp_price: "அதிக விலை",
-    very_fair: "மிகவும் நியாயமானது"
+    very_fair: "மிகவும் நியாயமானது",
+    map_title: "📍 வரைபடத்தில் பாதை தேர்வு",
+    use_gps: "GPS பயன்படுத்து",
+    start_loc: "தொடக்க இடம்",
+    dest_loc: "சேருமிடம்"
   }
 };
 
@@ -738,9 +878,9 @@ function applyLangUI() {
   const bTa = document.getElementById('lang-ta');
   if(bEn && bTa) {
     bEn.style.background = isEn ? '#2ecc71' : 'transparent';
-    bEn.style.color = isEn ? '#005027' : '#3d4a3e';
+    bEn.style.color = isEn ? 'var(--on-primary-container)' : 'var(--on-surface-variant)';
     bTa.style.background = !isEn ? '#2ecc71' : 'transparent';
-    bTa.style.color = !isEn ? '#005027' : '#3d4a3e';
+    bTa.style.color = !isEn ? 'var(--on-primary-container)' : 'var(--on-surface-variant)';
   }
 
   // Update texts
@@ -965,8 +1105,8 @@ function recalculate() {
     const card = document.getElementById('cmp-' + id).closest('.flex-none');
     if (card) {
       card.style.borderColor = v === state.vehicle ? 'rgba(0,109,55,.4)' : 'rgba(187,203,187,.2)';
-      card.style.background  = v === state.vehicle ? 'rgba(46,204,113,.06)' : '#fff';
-      document.getElementById('cmp-' + id).style.color = v === state.vehicle ? '#006d37' : '#191c1d';
+      card.style.background  = v === state.vehicle ? 'rgba(46,204,113,.06)' : 'var(--surface-highest)';
+      document.getElementById('cmp-' + id).style.color = v === state.vehicle ? 'var(--primary)' : 'var(--on-surface)';
     }
   });
 }
@@ -1097,8 +1237,8 @@ let currentFilter = 'all';
 function filterHistory(filter) {
   currentFilter = filter;
   document.querySelectorAll('.hist-filter').forEach(b => {
-    b.style.background = b.dataset.filter === filter ? '#2ecc71' : '#fff';
-    b.style.color      = b.dataset.filter === filter ? '#005027' : '#191c1d';
+    b.style.background = b.dataset.filter === filter ? '#2ecc71' : 'var(--surface-highest)';
+    b.style.color      = b.dataset.filter === filter ? 'var(--on-primary-container)' : 'var(--on-surface)';
     b.style.fontWeight = b.dataset.filter === filter ? '700' : '600';
   });
   renderHistory(filter);
@@ -1139,52 +1279,52 @@ function renderHistory(filter) {
     const card = document.createElement('div');
     if (isHero) {
       card.className = 'card-bg p-6 rounded-xl shadow-sm mb-2';
-      card.style.background = '#fff';
+      card.style.background = 'var(--surface-highest)';
       card.innerHTML = `
         <div style="position:relative;overflow:hidden;">
           <div class="flex justify-between items-start mb-5">
             <div class="flex items-center gap-4">
-              <div style="width:3.5rem;height:3.5rem;border-radius:9999px;background:rgba(46,204,113,.15);display:flex;align-items:center;justify-content:center;color:#006d37;">
+              <div style="width:3.5rem;height:3.5rem;border-radius:9999px;background: var(--primary-container-alpha);display:flex;align-items:center;justify-content:center;color: var(--primary);">
                 <span class="material-symbols-outlined" style="font-size:28px;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;">${icons[e.vehicle]}</span>
               </div>
               <div>
-                <p style="font-size:10px;font-weight:700;color:#6c7b6d;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin:0 0 2px;">${date}</p>
-                <h3 style="font-family:'Manrope',sans-serif;font-weight:700;font-size:1.05rem;color:#191c1d;margin:0;">${emojis[e.vehicle]} ${e.vehicle} Trip</h3>
+                <p style="font-size:10px;font-weight:700;color: var(--outline);letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin:0 0 2px;">${date}</p>
+                <h3 style="font-family:'Manrope',sans-serif;font-weight:700;font-size:1.05rem;color: var(--on-surface);margin:0;">${emojis[e.vehicle]} ${e.vehicle} Trip</h3>
               </div>
             </div>
             <div style="text-align:right;">
-              <p style="font-size:9px;font-weight:700;color:#006d37;text-transform:uppercase;margin:0 0 2px;">Total Fare</p>
-              <p style="font-family:'Manrope',sans-serif;font-size:1.5rem;font-weight:900;color:#191c1d;margin:0;">₹${e.total}</p>
+              <p style="font-size:9px;font-weight:700;color: var(--primary);text-transform:uppercase;margin:0 0 2px;">Total Fare</p>
+              <p style="font-family:'Manrope',sans-serif;font-size:1.5rem;font-weight:900;color: var(--on-surface);margin:0;">₹${e.total}</p>
             </div>
           </div>
           <div class="flex items-center justify-between" style="padding-top:1rem;border-top:1px solid rgba(187,203,187,.2);">
             <div class="flex items-center gap-1.5" style="color:#006397;">
               <span class="material-symbols-outlined" style="font-size:18px;">route</span>
-              <span style="font-size:.875rem;font-weight:500;color:#3d4a3e;">${e.distance} km</span>
+              <span style="font-size:.875rem;font-weight:500;color: var(--on-surface-variant);">${e.distance} km</span>
             </div>
             <div class="flex items-center gap-1.5">
               <span class="material-symbols-outlined" style="font-size:18px;color:#006397;">local_gas_station</span>
-              <span style="font-size:.875rem;font-weight:500;color:#3d4a3e;">${e.fuel} · ₹${e.fuelPrice}/L</span>
+              <span style="font-size:.875rem;font-weight:500;color: var(--on-surface-variant);">${e.fuel} · ₹${e.fuelPrice}/L</span>
             </div>
-            <span style="font-size:10px;font-weight:700;padding:3px 10px;background:rgba(0,109,55,.1);color:#006d37;border-radius:9999px;text-transform:uppercase;">Latest</span>
+            <span style="font-size:10px;font-weight:700;padding:3px 10px;background: var(--primary-container-alpha);color: var(--primary);border-radius:9999px;text-transform:uppercase;">Latest</span>
           </div>
         </div>
       `;
     } else {
       card.className = 'card-bg p-5 rounded-xl flex items-center justify-between hover:opacity-80 transition-all';
-      card.style.background = '#fff';
+      card.style.background = 'var(--surface-highest)';
       card.innerHTML = `
         <div class="flex items-center gap-4">
-          <div style="width:3rem;height:3rem;border-radius:9999px;background:#e7e8e9;display:flex;align-items:center;justify-content:center;color:#3d4a3e;">
+          <div style="width:3rem;height:3rem;border-radius:9999px;background: var(--surface-container-high);display:flex;align-items:center;justify-content:center;color: var(--on-surface-variant);">
             <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;">${icons[e.vehicle]}</span>
           </div>
           <div>
-            <p style="font-size:10px;font-weight:700;color:#6c7b6d;opacity:.6;margin:0;">${date}</p>
-            <p style="font-weight:700;color:#191c1d;margin:2px 0;">${e.vehicle} Trip</p>
-            <p style="font-size:.75rem;color:#3d4a3e;margin:0;">${e.distance} km · ${e.fuel}</p>
+            <p style="font-size:10px;font-weight:700;color: var(--outline);opacity:.6;margin:0;">${date}</p>
+            <p style="font-weight:700;color: var(--on-surface);margin:2px 0;">${e.vehicle} Trip</p>
+            <p style="font-size:.75rem;color: var(--on-surface-variant);margin:0;">${e.distance} km · ${e.fuel}</p>
           </div>
         </div>
-        <p style="font-family:'Manrope',sans-serif;font-size:1.2rem;font-weight:800;color:#191c1d;">₹${e.total}</p>
+        <p style="font-family:'Manrope',sans-serif;font-size:1.2rem;font-weight:800;color: var(--on-surface);">₹${e.total}</p>
       `;
     }
     list.appendChild(card);
@@ -1211,8 +1351,8 @@ function syncSettingsUI() {
 
   document.querySelectorAll('.settings-veh-btn').forEach(b => {
     const active = b.dataset.v === settings.defaultVehicle;
-    b.style.background = active ? '#2ecc71' : '#e7e8e9';
-    b.style.color      = active ? '#005027' : '#3d4a3e';
+    b.style.background = active ? '#2ecc71' : 'var(--surface-container-high)';
+    b.style.color      = active ? 'var(--on-primary-container)' : 'var(--on-surface-variant)';
   });
 
   // Apply theme
@@ -1226,8 +1366,8 @@ function setDefaultVehicle(btn) {
   settings.defaultVehicle = btn.dataset.v;
   document.querySelectorAll('.settings-veh-btn').forEach(b => {
     const active = b === btn;
-    b.style.background = active ? '#2ecc71' : '#e7e8e9';
-    b.style.color      = active ? '#005027' : '#3d4a3e';
+    b.style.background = active ? '#2ecc71' : 'var(--surface-container-high)';
+    b.style.color      = active ? 'var(--on-primary-container)' : 'var(--on-surface-variant)';
   });
   // Push to calculator too
   if (!state.manualMileage) {
@@ -1368,7 +1508,275 @@ document.addEventListener('DOMContentLoaded', () => {
   const style = document.createElement('style');
   style.innerHTML = `@keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: .5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }`;
   document.head.appendChild(style);
+
+  // Initialize the map
+  initMap();
 });
+</script>
+
+<!-- ══════════════════════════════════════════════
+     MAP LOGIC (Leaflet + OpenStreetMap + OSRM)
+     100% Free, no API key required
+══════════════════════════════════════════════ -->
+<script>
+let frMap, startMarker, endMarker, routeLine;
+let mapStartCoords = null, mapEndCoords = null;
+let searchDebounceTimer = null;
+
+const CHENNAI = [13.0827, 80.2707]; // Default center
+
+// Custom marker icons
+function createIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:28px;height:28px;background:${color};border:3px solid #fff;border-radius:9999px;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;"><div style="width:8px;height:8px;background:#fff;border-radius:9999px;"></div></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  });
+}
+
+const startIcon = createIcon('#2ecc71');
+const endIcon = createIcon('#e74c3c');
+
+function initMap() {
+  frMap = L.map('fairride-map', {
+    center: CHENNAI,
+    zoom: 12,
+    zoomControl: false,
+    attributionControl: false
+  });
+
+  // Add zoom control to bottom-right
+  L.control.zoom({ position: 'bottomright' }).addTo(frMap);
+
+  // OpenStreetMap tiles (100% free)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(frMap);
+
+  // Attribution in corner
+  L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(frMap);
+
+  // Click on map to set points
+  frMap.on('click', function(e) {
+    if (!mapStartCoords) {
+      setStartPoint(e.latlng.lat, e.latlng.lng, 'Map pin');
+    } else if (!mapEndCoords) {
+      setEndPoint(e.latlng.lat, e.latlng.lng, 'Map pin');
+    }
+  });
+
+  // Setup search listeners
+  setupSearch('map-search-start', 'map-suggestions-start', 'start');
+  setupSearch('map-search-end', 'map-suggestions-end', 'end');
+}
+
+// ── Search with Nominatim (free geocoding) ──
+function setupSearch(inputId, suggestionsId, type) {
+  const input = document.getElementById(inputId);
+  const suggestions = document.getElementById(suggestionsId);
+
+  input.addEventListener('input', function() {
+    clearTimeout(searchDebounceTimer);
+    const q = this.value.trim();
+    if (q.length < 3) { suggestions.classList.remove('show'); return; }
+    searchDebounceTimer = setTimeout(() => searchPlace(q, suggestions, type), 400);
+  });
+
+  input.addEventListener('focus', function() {
+    if (this.value.trim().length >= 3) {
+      suggestions.classList.add('show');
+    }
+  });
+
+  // Close suggestions when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+      suggestions.classList.remove('show');
+    }
+  });
+}
+
+async function searchPlace(query, suggestionsEl, type) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=in&addressdetails=1`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    const results = await res.json();
+
+    suggestionsEl.innerHTML = '';
+    if (!results.length) {
+      suggestionsEl.innerHTML = '<div class="map-suggestion-item" style="color:var(--outline);cursor:default;"><span class="material-symbols-outlined">search_off</span> No results found</div>';
+      suggestionsEl.classList.add('show');
+      return;
+    }
+
+    results.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'map-suggestion-item';
+      item.innerHTML = `<span class="material-symbols-outlined">location_on</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.display_name}</span>`;
+      item.addEventListener('click', () => {
+        if (type === 'start') {
+          setStartPoint(parseFloat(r.lat), parseFloat(r.lon), r.display_name);
+        } else {
+          setEndPoint(parseFloat(r.lat), parseFloat(r.lon), r.display_name);
+        }
+        suggestionsEl.classList.remove('show');
+      });
+      suggestionsEl.appendChild(item);
+    });
+    suggestionsEl.classList.add('show');
+  } catch (err) {
+    console.error('Search error:', err);
+  }
+}
+
+// ── Set Points ──
+function setStartPoint(lat, lng, name) {
+  mapStartCoords = [lat, lng];
+  if (startMarker) frMap.removeLayer(startMarker);
+  startMarker = L.marker([lat, lng], { icon: startIcon, draggable: true }).addTo(frMap);
+  startMarker.on('dragend', function(e) {
+    const pos = e.target.getLatLng();
+    mapStartCoords = [pos.lat, pos.lng];
+    reverseGeocode(pos.lat, pos.lng, 'map-search-start');
+    if (mapEndCoords) calcRoute();
+  });
+
+  const shortName = name.length > 50 ? name.substring(0, 47) + '...' : name;
+  document.getElementById('map-search-start').value = shortName;
+
+  if (mapEndCoords) calcRoute();
+  else frMap.setView([lat, lng], 14);
+}
+
+function setEndPoint(lat, lng, name) {
+  mapEndCoords = [lat, lng];
+  if (endMarker) frMap.removeLayer(endMarker);
+  endMarker = L.marker([lat, lng], { icon: endIcon, draggable: true }).addTo(frMap);
+  endMarker.on('dragend', function(e) {
+    const pos = e.target.getLatLng();
+    mapEndCoords = [pos.lat, pos.lng];
+    reverseGeocode(pos.lat, pos.lng, 'map-search-end');
+    if (mapStartCoords) calcRoute();
+  });
+
+  const shortName = name.length > 50 ? name.substring(0, 47) + '...' : name;
+  document.getElementById('map-search-end').value = shortName;
+
+  if (mapStartCoords) calcRoute();
+  else frMap.setView([lat, lng], 14);
+}
+
+// ── Reverse Geocode (for drag) ──
+async function reverseGeocode(lat, lng, inputId) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+    const data = await res.json();
+    if (data.display_name) {
+      const short = data.display_name.length > 50 ? data.display_name.substring(0, 47) + '...' : data.display_name;
+      document.getElementById(inputId).value = short;
+    }
+  } catch(e) {}
+}
+
+// ── Calculate Route via OSRM (100% Free) ──
+async function calcRoute() {
+  if (!mapStartCoords || !mapEndCoords) return;
+
+  try {
+    const url = `https://router.project-osrm.org/route/v1/driving/${mapStartCoords[1]},${mapStartCoords[0]};${mapEndCoords[1]},${mapEndCoords[0]}?overview=full&geometries=geojson`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.code !== 'Ok' || !data.routes.length) {
+      toast('Could not find a route');
+      return;
+    }
+
+    const route = data.routes[0];
+    const distKm = (route.distance / 1000).toFixed(1);
+    const durMins = Math.round(route.duration / 60);
+
+    // Draw route on map
+    if (routeLine) frMap.removeLayer(routeLine);
+    routeLine = L.geoJSON(route.geometry, {
+      style: { color: '#006d37', weight: 5, opacity: 0.8, lineCap: 'round', lineJoin: 'round' }
+    }).addTo(frMap);
+
+    // Fit map to show entire route
+    const bounds = routeLine.getBounds().pad(0.15);
+    frMap.fitBounds(bounds);
+
+    // Show route info
+    document.getElementById('map-route-km').textContent = distKm + ' km';
+    document.getElementById('map-route-time').textContent = durMins + ' min drive';
+    document.getElementById('map-route-info').style.display = 'flex';
+
+  } catch (err) {
+    console.error('Routing error:', err);
+    toast('Route calculation failed');
+  }
+}
+
+// ── Apply distance to calculator ──
+function applyMapDistance() {
+  const kmText = document.getElementById('map-route-km').textContent;
+  const km = parseFloat(kmText);
+  if (!km || km <= 0) return;
+
+  // Fill distance input
+  document.getElementById('inp-distance').value = km;
+  state.distance = km;
+  saveStateLS();
+  recalculate();
+
+  // Also fill trip time estimate
+  const timeText = document.getElementById('map-route-time').textContent;
+  const mins = parseInt(timeText);
+  if (mins > 0) {
+    document.getElementById('inp-time').value = mins;
+    state.timeMins = mins;
+  }
+
+  toast('Distance & time applied from map ✓');
+}
+
+// ── Use GPS Location ──
+function useMyLocation() {
+  const btn = document.getElementById('btn-my-location');
+  if (!navigator.geolocation) {
+    toast('GPS not available on this device');
+    return;
+  }
+
+  btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;animation:spin 1s linear infinite;">sync</span><span>Locating...</span>';
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      setStartPoint(lat, lng, 'My Location');
+      reverseGeocode(lat, lng, 'map-search-start');
+      frMap.setView([lat, lng], 15);
+      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">my_location</span><span>Use GPS</span>';
+      toast('GPS location set as start ✓');
+    },
+    (err) => {
+      console.error('GPS Error:', err);
+      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">my_location</span><span>Use GPS</span>';
+      toast('Location access denied');
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+// Add spin animation
+(function() {
+  const s = document.createElement('style');
+  s.textContent = '@keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }';
+  document.head.appendChild(s);
+})();
 </script>
 </body>
 </html>
