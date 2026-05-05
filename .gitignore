@@ -1,0 +1,6 @@
+.idea/
+android-app/.gradle/
+android-app/app/build/
+android-app/local.properties
+*.apk
+!APK/FairRide-latest.apk

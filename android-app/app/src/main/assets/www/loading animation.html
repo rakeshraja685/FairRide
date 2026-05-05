@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>FairRide | Trusted Journeys</title>
+    <link rel="icon" type="image/png" href="logo.png"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --brand-green: #006d37;
+            --brand-mint: #2ecc71;
+            --ink: #191c1d;
+            --surface: #f8f9fa;
+        }
+        body {
+            min-height: 100dvh;
+            overflow: hidden;
+            background: radial-gradient(circle at 20% 22%, rgba(46, 204, 113, 0.14), transparent 24%),
+                        radial-gradient(circle at 80% 80%, rgba(92, 184, 253, 0.12), transparent 30%),
+                        linear-gradient(160deg, #fcfdfd 0%, #f4f8fb 48%, #f9fbfc 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+        }
+        .logo-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin-bottom: 2rem;
+            animation: reveal 0.8s ease-out;
+        }
+        @keyframes reveal { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        .progress-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(0, 109, 55, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+        .progress-value {
+            width: 40%;
+            height: 100%;
+            background: var(--brand-green);
+            animation: loading 2s infinite ease-in-out;
+        }
+        @keyframes loading { 0% { width: 0; margin-left: 0; } 50% { width: 40%; margin-left: 30%; } 100% { width: 0; margin-left: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <img src="logo.png" alt="FairRide Logo" class="w-full h-full object-contain" />
+    </div>
+    
+    <div class="text-center space-y-2">
+        <h1 class="text-4xl font-extrabold font-headline tracking-tighter text-on-surface">FairRide</h1>
+        <p class="text-xs uppercase tracking-[0.3em] font-bold text-outline">Trusted Journeys. Just Pricing.</p>
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress-value"></div>
+    </div>
+
+    <p class="mt-8 text-sm text-outline italic" id="status-text">Optimizing transit routes...</p>
+
+    <script>
+        const AUTH_KEY = 'fr_auth';
+        function getNextPage() {
+            try {
+                const auth = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+                return auth && auth.email ? 'index.html' : 'loginpage.html';
+            } catch (e) { return 'loginpage.html'; }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                window.location.replace(getNextPage());
+            }, 2500);
+        });
+    </script>
+</body>
+</html>
