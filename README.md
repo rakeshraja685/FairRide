@@ -4,7 +4,7 @@ FairRide is a smart fare calculator built to help riders and drivers estimate a 
 
 ## Download APK
 
-[Download the latest Android APK](https://github.com/rakeshraja685/FairRide/raw/main/APK/FairRide-latest.apk)
+[Download the latest Android APK](https://github.com/rakeshraja685/FairRide/releases/latest/download/FairRide-latest.apk)
 
 Repository: [rakeshraja685/FairRide](https://github.com/rakeshraja685/FairRide)
 
